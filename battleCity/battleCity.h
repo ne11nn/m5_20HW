@@ -108,6 +108,8 @@ int tanksOnField = 0; // how many tanks on the field
 
 int gameBoard[ROW][COL];
 
+int pathFindBoard[ROW][COL];
+
 int cycle = 0;
 
 // structure definitions

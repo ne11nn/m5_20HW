@@ -77,45 +77,45 @@ void GoToxy(int x, int y)
 	SetConsoleCursorPosition(handle, pos);
 }
 
-void cleanIntArray(int array[HEIGHT][WIDTH]) {
-    for (int y=0; y<HEIGHT; y++) {
-        for (int x=0; x<WIDTH; x++) {
+void cleanIntArray(int array[ROW][COL]) {
+    for (int y=0; y<ROW; y++) {
+        for (int x=0; x<COL; x++) {
             array[y][x] = 0;
         }
     }
 }
 
-void cleanDoubleArray(double array[HEIGHT][WIDTH]) {
-    for (int y=0; y<HEIGHT; y++) {
-        for (int x=0; x<WIDTH; x++) {
+void cleanDoubleArray(double array[ROW][COL]) {
+    for (int y=0; y<ROW; y++) {
+        for (int x=0; x<COL; x++) {
             array[y][x] = 0;
         }
     }
 }
 
-void cleanParentArray(int array[HEIGHT][WIDTH][2]) {
-    for (int y=0; y<HEIGHT; y++) {
-        for (int x=0; x<WIDTH; x++) {
+void cleanParentArray(int array[ROW][COL][2]) {
+    for (int y=0; y<ROW; y++) {
+        for (int x=0; x<COL; x++) {
             array[y][x][0] = -1;
             array[y][x][1] = -1;
         }
     }
 }
 
-void calculateHeuristics(double h[HEIGHT][WIDTH], double g[HEIGHT][WIDTH], double f[HEIGHT][WIDTH], int end[2]) {
-    for (int y=0; y<HEIGHT; y++) {
-        for (int x=0; x<WIDTH; x++) {
+void calculateHeuristics(double h[ROW][COL], double g[ROW][COL], double f[ROW][COL], int end[2]) {
+    for (int y=0; y<ROW; y++) {
+        for (int x=0; x<COL; x++) {
             h[y][x] = sqrt(pow(end[1] - x, 2) + pow(end[0] - y, 2));
             f[y][x] = g[y][x] + h[y][x];
         }
     }
 }
 
-int* getNewCurrent(double f[HEIGHT][WIDTH], int array[HEIGHT][WIDTH], int open[HEIGHT][WIDTH]) {
+int* getNewCurrent(double f[ROW][COL], int array[ROW][COL], int open[ROW][COL]) {
     static int lowest[2] = {-1, -1};
     int lowestValue = 99999;
-    for (int y=0; y<HEIGHT; y++) {
-        for (int x=0; x<WIDTH; x++) {
+    for (int y=0; y<ROW; y++) {
+        for (int x=0; x<COL; x++) {
             if (f[y][x] < lowestValue && open[y][x] == 1) {
                 lowest[0] = y;
                 lowest[1] = x;
@@ -126,18 +126,15 @@ int* getNewCurrent(double f[HEIGHT][WIDTH], int array[HEIGHT][WIDTH], int open[H
     return lowest;
 }
 
-void reconstruct(int* current, int parent[HEIGHT][WIDTH][2], int array[HEIGHT][WIDTH]) {
+void reconstruct(int* current, int parent[ROW][COL][2], int array[ROW][COL]) {
     while (parent[current[0]][current[1]][0] != -1) {
         array[parent[current[0]][current[1]][0]][parent[current[0]][current[1]][1]] = 20;
         current[0] = parent[current[0]][current[1]][0];
         current[1] = parent[current[0]][current[1]][1];
     }
-    printf("\n");
-    printArray(array);
-    printf("\n");
 }
 
-void pathFind(int startX, int startY, int endX, int endY)
+int pathFind(int startX, int startY, int endX, int endY)
 {
     int parent[ROW][COL][2];
 
@@ -154,8 +151,8 @@ void pathFind(int startX, int startY, int endX, int endY)
     int start[2] = {startX, startY};
     int end[2] = {endX, endY};
 
-    gameBoard[start[0]][start[1]] = 20;
-    gameBoard[end[0]][end[1]] = 20;
+    pathFindBoard[start[0]][start[1]] = 20;
+    pathFindBoard[end[0]][end[1]] = 20;
 
     cleanParentArray(parent);
     cleanDoubleArray(f);
@@ -169,11 +166,11 @@ void pathFind(int startX, int startY, int endX, int endY)
     numOpen++;
 
     while (numOpen > 0 && done == 0) {
-        current = getNewCurrent(f, gameBoard, open);
+        current = getNewCurrent(f, pathFindBoard, open);
 
         if (current[0] == end[0] && current[1] == end[1]) {
             done = 1;
-            reconstruct(current, parent, gameBoard);
+            reconstruct(current, parent, pathFindBoard);
             return 0;
         }
 
@@ -185,7 +182,7 @@ void pathFind(int startX, int startY, int endX, int endY)
             for (int x=current[1]-1; x<current[1]+2; x++) {
                 if (x < 0 || y < 0 || x > COL-1 || y > ROW-1 ||
                     abs(current[0] - y) == abs(current[1] - x) ||
-                    closed[y][x] == 1 || gameBoard[y][x] == 1) {
+                    closed[y][x] == 1 || pathFindBoard[y][x] == 1) {
                     continue;
                 }
 
@@ -223,6 +220,7 @@ void printTank(MyTank tank)
         for (int j = 0; j < 3; j++)
         {
             gameBoard[tank.y+j-1][tank.x+i-1] = PTANK;
+            pathFindBoard[tank.y+j-1][tank.x+i-1] = PTANK;
         }
     }
     GoToxy(0,ROW+5);
@@ -238,6 +236,7 @@ void printEnemyTank(EnemyTank tank)
         for (int j = 0; j < 3; j++)
         {
             gameBoard[tank.y+j-1][tank.x+i-1] = ETANK;
+            pathFindBoard[tank.y+j-1][tank.x+i-1] = ETANK;
         }
     }
     GoToxy(0,ROW+5);
@@ -253,6 +252,7 @@ void clearEnemyTank(EnemyTank tank)
         for (int j = 0; j < 3; j++)
         {
             gameBoard[tank.y+j-1][tank.x+i-1] = EMPTY;
+            pathFindBoard[tank.y+j-1][tank.x+i-1] = EMPTY;
         }
     }
 }
@@ -267,6 +267,7 @@ void clearSpawnTank()
         for (int j = 0; j < 3; j++)
         {
             gameBoard[myTank.y+j-1][myTank.x+i-1] = EMPTY;
+            pathFindBoard[myTank.y+j-1][myTank.x+i-1] = EMPTY;
         }
     }
 
@@ -322,6 +323,7 @@ void defensePowerup(int rein)
             if (rein == 1)
             {
                 gameBoard[j][i] = REINWALL;
+                pathFindBoard[j][i] = REINWALL;
                 GoToxy(i,j);
                 SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),FOREGROUND_GREEN|FOREGROUND_BLUE|FOREGROUND_RED
                             |BACKGROUND_GREEN|BACKGROUND_BLUE|BACKGROUND_RED);
@@ -331,6 +333,7 @@ void defensePowerup(int rein)
             else
             {
                 gameBoard[j][i] = REGWALL;
+                pathFindBoard[j][i] = REGWALL;
                 GoToxy(i,j);
                 SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),FOREGROUND_INTENSITY|FOREGROUND_GREEN|FOREGROUND_RED|BACKGROUND_GREEN|BACKGROUND_RED);
 				printf("▓"); 
@@ -357,12 +360,14 @@ void enemyDefensePowerup(int rein)
             if (rein == 1)
             {
                 gameBoard[j][i] = EMPTY;
+                pathFindBoard[j][i] = EMPTY;
                 GoToxy(i,j);
                 printf("%c", clear);
             }
             else
             {
                 gameBoard[j][i] = REGWALL;
+                pathFindBoard[j][i] = REGWALL;
                 GoToxy(i,j);
                 SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),FOREGROUND_INTENSITY|FOREGROUND_GREEN|FOREGROUND_RED|BACKGROUND_GREEN|BACKGROUND_RED);
 				printf("▓"); 
@@ -445,6 +450,8 @@ void initiateMap(int mapNumber)
         for (int j = 0; j < COL; j++)
         {
             fscanf(fp, "%d", &gameBoard[i][j]);
+
+            pathFindBoard[i][j] = gameBoard[i][j];
             //printf("%d ", gameBoard[i][j]);
             if (gameBoard[i][j] == WATER)
             {
@@ -855,6 +862,7 @@ void replaceWater()
                 if (waterBoard[0][j] == myTank.y-2*y && waterBoard[1][j] == myTank.x-2*x+i)
                 {
                     gameBoard[myTank.y-2*y][myTank.x-2*x+i] = WATER;
+                    pathFindBoard[myTank.y-2*y][myTank.x-2*x+i] = WATER;
                     GoToxy(myTank.x-2*x+i, myTank.y-2*y);
                     SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),FOREGROUND_BLUE|BACKGROUND_BLUE);
                     printf("■");
@@ -873,6 +881,7 @@ void replaceWater()
                 if (waterBoard[0][j] == myTank.y-2*y+i && waterBoard[1][j] == myTank.x-2*x)
                 {
                     gameBoard[myTank.y-2*y+i][myTank.x-2*x] = WATER;
+                    pathFindBoard[myTank.y-2*y+i][myTank.x-2*x] = WATER;
                     GoToxy(myTank.x-2*x, myTank.y-2*y+i);
                     SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),FOREGROUND_BLUE|BACKGROUND_BLUE);
                     printf("■");
@@ -919,6 +928,7 @@ void enemyReplaceWater(EnemyTank *tank)
                 if (waterBoard[0][j] == tank->y-2*y && waterBoard[1][j] == tank->x-2*x+i)
                 {
                     gameBoard[tank->y-2*y][tank->x-2*x+i] = WATER;
+                    pathFindBoard[tank->y-2*y][tank->x-2*x+i] = WATER;
                     GoToxy(tank->x-2*x+i, tank->y-2*y);
                     SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),FOREGROUND_BLUE|BACKGROUND_BLUE);
                     printf("■");
@@ -937,6 +947,7 @@ void enemyReplaceWater(EnemyTank *tank)
                 if (waterBoard[0][j] == tank->y-2*y+i && waterBoard[1][j] == tank->x-2*x)
                 {
                     gameBoard[tank->y-2*y+i][tank->x-2*x] = WATER;
+                    pathFindBoard[tank->y-2*y+i][tank->x-2*x] = WATER;
                     GoToxy(tank->x-2*x, tank->y-2*y+i);
                     SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),FOREGROUND_BLUE|BACKGROUND_BLUE);
                     printf("■");
@@ -982,6 +993,7 @@ void moveTank(int x, int y)
             GoToxy((myTank.x-1)+j , myTank.y-1+i);
             printf("%c",empty);
             gameBoard[myTank.y+j-1][myTank.x+i-1] = EMPTY;
+            pathFindBoard[myTank.y+j-1][myTank.x+i-1] = EMPTY;
         } 
     }
 
@@ -1113,6 +1125,7 @@ void moveEnemyTank(EnemyTank *tank)
                 GoToxy((tank->x-1)+j, tank->y-1+i);
                 printf("%c",empty);
                 gameBoard[tank->y+j-1][tank->x+i-1] = EMPTY;
+                pathFindBoard[tank->y+j-1][tank->x+i-1] = EMPTY;
             }
         }
 
@@ -1153,6 +1166,7 @@ void myBulletSpawning(MyTank tank)
         if (gameBoard[y][x] == REGWALL)
         {
             gameBoard[y][x] = EMPTY;
+            pathFindBoard[y][x] = EMPTY;
             GoToxy(x,y);
             printf("%c", clear);
             myBullet.available = 1;
@@ -1160,10 +1174,12 @@ void myBulletSpawning(MyTank tank)
         else if (gameBoard[y][x] == POWERWALL)
         {
             gameBoard[y][x] = EMPTY;
+            pathFindBoard[y][x] = EMPTY;
             GoToxy(x,y);
             printf("%c", clear);
             int powerupType = rand() % 10;
             gameBoard[y][x] = powerupType + 14;
+            pathFindBoard[y][x] = powerupType + 14;
             initiatePowerup(x, y, powerupType);
             myBullet.available = 1;
         }
@@ -1212,6 +1228,7 @@ void enemyBulletSpawning(EnemyTank tank, Bullet* bullet)
         if (gameBoard[y][x] == REGWALL)
         {
             gameBoard[y][x] = EMPTY;
+            pathFindBoard[y][x] = EMPTY;
             GoToxy(x,y);
             printf("%c", clear);
             bullet->available = 1;
@@ -1311,6 +1328,7 @@ void moveEnemyBullet(EnemyTank tank, Bullet* bullet)
     GoToxy(bullet->x, bullet->y);
     printf("%c",clear);
     gameBoard[bullet->y][bullet->x] = EMPTY;
+    pathFindBoard[bullet->y][bullet->x] = EMPTY;
 
     if (tempReplaceWater == 1)
     {
@@ -1318,6 +1336,7 @@ void moveEnemyBullet(EnemyTank tank, Bullet* bullet)
         SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),FOREGROUND_BLUE|BACKGROUND_BLUE);
         printf("■");
         gameBoard[bullet->y][bullet->x] = WATER;
+        pathFindBoard[bullet->y][bullet->x] = WATER;
         if (tank.number == 1)
         {
             oneReplaceWater = 0;
@@ -1365,15 +1384,20 @@ void moveEnemyBullet(EnemyTank tank, Bullet* bullet)
     else if (judgeBulletMovement(x, y) == 1)
     {
         gameBoard[y][x] = EMPTY;
+        pathFindBoard[y][x] = EMPTY;
         GoToxy(x,y);
         printf("%c", clear);
         bullet->available = 1;
         if (tank.powerupActive == POWERUPEXPLOSIVE)
         {
             gameBoard[y-1][x] = EMPTY;
+            pathFindBoard[y-1][x] = EMPTY;
             gameBoard[y+1][x] = EMPTY;
+            pathFindBoard[y+1][x] = EMPTY;
             gameBoard[y][x-1] = EMPTY;
+            pathFindBoard[y][x-1] = EMPTY;
             gameBoard[y][x+1] = EMPTY;
+            pathFindBoard[y][x+1] = EMPTY;
             GoToxy(x+1,y);
             printf("%c", clear);
             GoToxy(x-1,y);
@@ -1414,10 +1438,12 @@ void moveEnemyBullet(EnemyTank tank, Bullet* bullet)
     else if (judgeBulletMovement(x, y) == -4)
     {
         gameBoard[y][x] = EMPTY;
+        pathFindBoard[y][x] = EMPTY;
         GoToxy(x,y);
         printf("%c", clear);
         int powerupType = rand() % 10;
         gameBoard[y][x] = powerupType + 14;
+        pathFindBoard[y][x] = powerupType + 14;
         initiatePowerup(x, y, powerupType);
         bullet->available = 1;
     }
@@ -1453,6 +1479,7 @@ void moveSelfBullet()
     GoToxy(myBullet.x, myBullet.y);
     printf("%c",clear);
     gameBoard[myBullet.y][myBullet.x] = EMPTY;
+    pathFindBoard[myBullet.y][myBullet.x] = EMPTY;
 
     if (myReplaceWater == 1)
     {
@@ -1460,6 +1487,7 @@ void moveSelfBullet()
         SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),FOREGROUND_BLUE|BACKGROUND_BLUE);
         printf("■");
         gameBoard[myBullet.y][myBullet.x] = WATER;
+        pathFindBoard[myBullet.y][myBullet.x] = WATER;
         myReplaceWater = 0;
         SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 7);
     }
@@ -1496,15 +1524,20 @@ void moveSelfBullet()
     else if (judgeBulletMovement(x, y) == 1)
     {
         gameBoard[y][x] = EMPTY;
+        pathFindBoard[y][x] = EMPTY;
         GoToxy(x,y);
         printf("%c", clear);
         myBullet.available = 1;
         if (myPowerupActive == POWERUPEXPLOSIVE)
         {
             gameBoard[y-1][x] = EMPTY;
+            pathFindBoard[y-1][x] = EMPTY;
             gameBoard[y+1][x] = EMPTY;
+            pathFindBoard[y+1][x] = EMPTY;
             gameBoard[y][x-1] = EMPTY;
+            pathFindBoard[y][x-1] = EMPTY;
             gameBoard[y][x+1] = EMPTY;
+            pathFindBoard[y][x+1] = EMPTY;
             GoToxy(x+1,y);
             printf("%c", clear);
             GoToxy(x-1,y);
@@ -1601,10 +1634,12 @@ void moveSelfBullet()
     else if (judgeBulletMovement(x, y) == -4)
     {
         gameBoard[y][x] = EMPTY;
+        pathFindBoard[y][x] = EMPTY;
         GoToxy(x,y);
         printf("%c", clear);
         int powerupType = rand() % 10;
         gameBoard[y][x] = powerupType + 14;
+        pathFindBoard[y][x] = powerupType + 14;
         initiatePowerup(x, y, powerupType);
         myBullet.available = 1;
     }
@@ -1749,6 +1784,7 @@ void tankSpawning(EnemyTank *tank)
         for (int j = -1; j < 2; j++)
         {
             gameBoard[tank->y+j][tank->x+i] = ETANK;
+            pathFindBoard[tank->y+j][tank->x+i] = ETANK;
         }
     }
 
